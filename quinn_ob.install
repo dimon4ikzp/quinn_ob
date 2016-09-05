@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * Implementation of hook_schema()
+ */
+function quinn_ob_schema() {
+  $schema = array();
+  $schema['quinn_hr_preboarding'] = array(
+    'description' => t('Pre-Boarding HR.'),
+    'fields' => array(
+
+      'sid' => array(
+        'description' => t('Submission ID.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      "status_and_date" => array(
+        'type' => 'blob',
+        'not null' => TRUE,
+        //'serialize' => TRUE,
+      ),
+    ),
+
+    'primary key' => array('sid'),
+  );
+
+  $schema['quinn_supervisor_preboarding'] = array(
+    'description' => t('Pre-Boarding Supervisor.'),
+    'fields' => array(
+      'sid' => array(
+        'description' => t('Submission ID.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      "status_and_date" => array(
+        'type' => 'blob',
+        'not null' => TRUE,
+        //'serialize' => TRUE,
+      ),
+
+    ),
+    'primary key' => array('sid'),
+  );
+
+  $schema['quinn_supervisor_onboarding'] = array(
+    'description' => t('Onboarding Supervisor.'),
+    'fields' => array(
+      'sid' => array(
+        'description' => t('Submission ID.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      "status_and_date" => array(
+        'type' => 'blob',
+        'not null' => TRUE,
+        //'serialize' => TRUE,
+      ),
+      /*
+      'module' => array(
+        'description' => t('Module number.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 1,
+      ),*/
+
+    ),
+    'primary key' => array('sid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function quinn_ob_install() {
+  drupal_install_schema('quinn_hr_preboarding');
+  drupal_install_schema('quinn_supervisor_preboarding');
+  drupal_install_schema('quinn_supervisor_onboarding');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function quinn_ob_uninstall() {
+  drupal_uninstall_schema('quinn_hr_preboarding');
+  drupal_uninstall_schema('quinn_supervisor_preboarding');
+  drupal_uninstall_schema('quinn_supervisor_onboarding');
+
+  //variable_del('om_audit_dispatcher_url');
+}

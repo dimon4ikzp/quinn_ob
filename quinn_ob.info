@@ -1,0 +1,5 @@
+name = "Quinn Onboarding Process"
+description = "Add Quinn Onboarding Process functionality."
+core = "7.x"
+package = Quinn
+

@@ -1,0 +1,64 @@
+form.preboarding-form-status .form-type-checkbox {
+  display    : block;
+  float      : left;
+  text-align : center;
+  width      : 60px;
+}
+
+table.onboarding-process thead tr,
+table.onboarding-process tbody tr.supervisor-preboarding-item-13,
+table.onboarding-process tbody tr.supervisor-preboarding-item-18 {
+  background  : #ccc;
+  font-weight : bold;
+}
+
+table.onboarding-process td, table.onboarding-process th {
+  padding : 1px 15px;
+}
+
+#user-register-form div.description {
+  display : block;
+}
+
+#user-register-form div.form-item > label {
+  display     : block;
+  float       : left;
+  width       : 140px;
+  line-height : 30px;
+}
+
+#user-register-form .form-wrapper {
+  clear: both;
+}
+
+#user-register-form input.date-clear {
+  clear: none;
+}
+
+#user-register-form div.form-type-radio > label {
+  display     : inline;
+  float       : none;
+  width       : auto;
+  line-height : 1em;
+}
+
+#user-register-form div.form-item div.form-item label {
+  display     : inline;
+  float       : none;
+  width       : auto;
+  line-height : 1em;
+}
+
+#user-register-form input[type="text"] {
+  float : left;
+  width : 340px;
+}
+
+#user-register-form div.term-reference-tree {
+  clear : both;
+  display: block;
+}
+
+div.form-header-text {
+  margin-bottom: 15px;
+}

@@ -1,0 +1,2151 @@
+<?php
+
+/**
+ * Implements hook_menu()
+ * @return array
+ */
+function quinn_ob_menu() {
+
+  $items = array();
+  $items['confirm'] = array(
+    'title' => 'Confirmed',
+    'description' => 'Confirmation page.',
+    'page callback' => 'quinn_ob_confirm',
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+
+  $items['hr/initiate-onboarding'] = array(
+    'title' => 'Onboarding - Process Initiation Form',
+    'description' => 'Onboarding - Process Initiation Form.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('user_register_form'),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'quinn_ob_user_access_check',
+    'access arguments' => array(0),
+  );
+
+  $items['hr/preboarding'] = array(
+    'title' => 'Pre-Boarding Employee Report',
+    'description' => 'Pre-Boarding Employee report.',
+    'page callback' => 'quinn_ob_hr_preboarding',
+    'type' => MENU_CALLBACK,
+    'access callback' => 'quinn_ob_user_access_check',
+    'access arguments' => array(0),
+  );
+
+  $items['hr/preboarding/employee/%'] = array(
+    'title' => 'Pre-Boarding Checklist',
+    'description' => 'Individual Employee checklist.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quinn_ob_hr_preboarding_checklist', 3),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'quinn_ob_user_access_check',
+    'access arguments' => array(0),
+  );
+
+  $items['supervisor/preboarding'] = array(
+    'title' => 'Supervisor Pre-Boarding List',
+    'description' => 'Supervisor Pre-Boarding List',
+    'page callback' => 'quinn_ob_supervisor_preboarding',
+    'type' => MENU_CALLBACK,
+    'access callback' => 'quinn_ob_user_access_check',
+    'access arguments' => array(0),
+  );
+
+  $items['supervisor/preboarding/employee/%'] = array(
+    'title' => 'Pre-Boarding Checklist',
+    'description' => 'Supervisor Pre-Boarding Checklist.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quinn_ob_supervisor_preboarding_checklist', 3),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'quinn_ob_user_access_check',
+    'access arguments' => array(0),
+  );
+
+  $items['supervisor/onboarding'] = array(
+    'title' => 'Supervisor Onboarding List',
+    'description' => 'Supervisor Onboarding List',
+    'page callback' => 'quinn_ob_supervisor_onboarding',
+    'type' => MENU_CALLBACK,
+    'access callback' => 'quinn_ob_user_access_check',
+    'access arguments' => array(0),
+  );
+
+  $items['supervisor/onboarding/employee/%'] = array(
+    'title' => 'Supervisor Onboarding Checklist',
+    'description' => 'Supervisor Onboarding Checklist.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quinn_ob_supervisor_onboarding_checklist', 3),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'quinn_ob_user_access_check',
+    'access arguments' => array(0),
+  );
+
+  $items['employee/onboarding/%'] = array(
+    'title' => 'Employee Onboarding',
+    'description' => 'Employee Onboarding.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quinn_ob_employee_onboarding', 2),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'quinn_ob_employee_access_check',
+    'access arguments' => array(2),
+  );
+
+  $items['admin/config/fields/onboarding'] = array(
+    'title' => 'Onboarding settings',
+    'description' => 'Onboarding settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quinn_ob_config_form', 'hr'),
+    'access callback' => TRUE,
+  );
+
+  $items['admin/config/fields/onboarding/hr_preboarding'] = array(
+    'title' => 'HR Pre-Boarding Checklist',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items['admin/config/fields/onboarding/supervisor_preboarding'] = array(
+    'title' => 'Supervisor Pre-Boarding Checklist',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quinn_ob_config_form', 'sup_pre'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+
+  $items['admin/config/fields/onboarding/supervisor_onboarding'] = array(
+    'title' => 'Supervisor Onboarding Checklist',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quinn_ob_config_form', 'sup_ob'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+
+  return $items;
+}
+
+function quinn_ob_config_form($form, &$form_state, $arg) {
+  $form = array();
+
+  switch ($arg) {
+    case 'hr':
+      $title = t('HR Pre-Boarding Checklist');
+
+      $list = array(1, 2, 3, 4, 5, 6);
+
+      foreach ($list as $item) {
+        $form['ob_hr_preboarding_' . $item] = array(
+          '#type' => 'textarea',
+          '#title' => t('Text for ' . $title . ' item ' . $item),
+          '#default_value' => variable_get('ob_hr_preboarding_' . $item),
+          '#required' => TRUE,
+        );
+      }
+      break;
+    case 'sup_pre':
+      $title = t('Supervisor Pre-Boarding Checklist');
+
+      $list = drupal_map_assoc(range(1, 20));
+
+      foreach ($list as $item) {
+        $form['ob_supervisor_preboarding_' . $item] = array(
+          '#type' => 'textarea',
+          '#title' => t('Text for ' . $title . ' item ' . $item),
+          '#default_value' => variable_get('ob_supervisor_preboarding_' . $item),
+          '#required' => TRUE,
+        );
+      }
+      break;
+    case 'sup_ob':
+      $title = t('Supervisor Onboarding Checklist');
+
+      $modules = drupal_map_assoc(range(1, 5));
+      $list = drupal_map_assoc(range(1, 10));
+      $form['modules']['#type'] = 'vertical_tabs';
+
+      foreach ($modules as $module) {
+        $form['module_' . $module] = array(
+          '#type' => 'fieldset',
+          '#title' => 'Module ' . $module,
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+          '#description' => 'Edit checklist items for module ' . $module,
+          '#group' => 'modules'
+        );
+
+        foreach ($list as $item) {
+          $form['module_' . $module]['ob_supervisor_ob_' . $item . 'module_' . $module] = array(
+            '#type' => 'textarea',
+            '#title' => t('Text for ' . $title . ' item ' . $item),
+            '#default_value' => variable_get('ob_supervisor_ob_' . $item . 'module_' . $module),
+            '#required' => TRUE,
+          );
+        }
+      }
+      break;
+  }
+
+
+  return system_settings_form($form);
+}
+
+/**
+ * Access callback for employee pages
+ * @param $uid
+ * @return bool
+ */
+function quinn_ob_employee_access_check($uid) {
+  global $user;
+  if ($user->uid == 1) {
+    return TRUE;
+  }
+  elseif ($uid == $user->uid) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Access callback for Supervisor and HR pages
+ * @param $arg_role
+ * @return bool
+ */
+function quinn_ob_user_access_check($arg_role) {
+  global $user;
+
+  if ($user->uid == 1) {
+    return TRUE;
+  }
+
+  $role = FALSE;
+
+  if ($arg_role == 'hr') {
+    $role = 'Human Resources';
+  }
+  elseif ($arg_role == 'supervisor') {
+    $role = 'Supervisor';
+  }
+
+  if ($role && is_array($user->roles) && in_array($role, array_values($user->roles))) {
+    return TRUE;
+  }
+  //return TRUE;
+
+  return FALSE;
+}
+
+function quinn_ob_confirm() {
+  drupal_set_message('Request has been submitted.');
+  return l(t('Return home'), '<front>');
+}
+
+/**
+ * @todo remove
+ * Implements hook_webform_select_options_info().
+ */
+function quinn_ob_webform_select_options_info() {
+  $items = array();
+  $items['supervisors'] = array(
+    'title' => t('QBS Supervisors'),
+    'options callback' => 'quinn_ob_options_supervisors',
+  );
+
+  $items['email_to'] = array(
+    'title' => t('Send To Email list'),
+    'options callback' => 'quinn_ob_options_email_to',
+  );
+  return $items;
+}
+
+/**
+ * @todo remove
+ * Webform options info callback.
+ */
+function quinn_ob_options_supervisors() {
+  $role = user_role_load_by_name('Supervisor');
+  $supervisors = array();
+
+  $query = db_select('users', 'u');
+  $query->fields('u', array('uid'));
+  $query->leftJoin('users_roles', 'r', 'r.uid = u.uid');
+  $query->leftJoin('field_data_field_first_name', 'fn', 'fn.entity_id = u.uid');
+  $query->leftJoin('field_data_field_last_name', 'ln', 'ln.entity_id = u.uid');
+  $query->fields('fn', array('field_first_name_value'));
+  $query->fields('ln', array('field_last_name_value'));
+  $query->condition('r.rid', $role->rid);
+  $query->condition('u.status', 1);
+  $query->orderBy('field_first_name_value');
+
+  $result = $query->execute();
+  while ($row = $result->fetchAssoc()) {
+    $supervisors[$row['uid']] = $row['field_first_name_value'] . ' ' . $row['field_last_name_value'];
+  }
+  //dsm($supervisors);
+  return $supervisors;
+}
+
+/**
+ * Implements hook_block_info()
+ * @return array - register info about Training confirmation block
+ */
+function quinn_ob_block_info() {
+  $blocks['training_confirmation'] = array(
+    'info' => t('Training confirmation'),
+    'cache' => DRUPAL_NO_CACHE,
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => '<front>'
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view()
+ * @param string $delta- block name(unique id)
+ * @return array - display blocks
+ */
+function quinn_ob_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'training_confirmation':
+      global $user;
+      $user = user_load($user->uid);
+      $lang = ($user->language) ? $user->language : 'und';
+
+
+      $block = array();
+      $block['subject'] = t('Training confirmation');
+      if ($user->field_onboarding[$lang][0]['value'] === '0') {
+
+        if (isset($user->field_module_supervisor[$lang][0]['value'])) {
+          $current_module_supervisor = $user->field_module_supervisor[$lang][0]['value'];
+        }
+        else {
+          $current_module_supervisor = 1;
+        }
+
+        if (isset($user->field_module_employee[$lang][0]['value'])) {
+          $current_module_employee = $user->field_module_employee[$lang][0]['value'];
+        }
+        else {
+          $current_module_employee = 1;
+        }
+
+        $modules = array(
+          1 => t('Company Information'),
+          2 => t('Department Information'),
+          3 => t('Position Information'),
+          4 => t('Development Plan'),
+          5 => t('Completion'),
+        );
+
+
+        $block['content']['header'] = array(
+          '#prefix' => '<div class="module-status-header">',
+          '#suffix' => "</div>",
+          '#markup' => t('You have outstanding items to complete in the Onboarding process.'),
+          '#type' => 'item',
+        );
+
+        $statuses = array(1 => t('Complete'), 2 => t('Awaiting Supervisor Confirmation'), 3 => t('Incomplete'));
+
+        //set status for first module
+        ($current_module_employee <= $current_module_supervisor) ? $status = 1 : $status = 2;
+
+        foreach ($modules as $num => $module_name) {
+          $link = FALSE;
+          if (($current_module_supervisor > $num) && ($current_module_employee > $num)) {
+            $status = 1;
+          }
+          elseif ($current_module_employee > $num && $current_module_supervisor <= $num) {
+            $status = 2;
+          }
+          else {
+            if ($status == 1) {
+              $link = TRUE;
+            }
+            $status = 3;
+          }
+
+          if ($link) {
+            $module_status = l($statuses[$status], 'employee/onboarding/' . $user->uid);
+          }
+          else {
+            $module_status = $statuses[$status];
+          }
+
+          $block['content'][$num] = array(
+            '#type' => 'item',
+            '#title' => t('Module !num: !name', array('!num' => $num, '!name' => $module_name)),
+            '#markup' => '<div class="module-status">' . $module_status . '</div>',
+            '#prefix' => "<div class='container-inline'>",
+            '#suffix' => "</div>",
+          );
+        }
+
+      }
+      else {
+
+        $uid = $user->uid;
+        $view_args = array($uid);
+        $display_id = 'attachment_1';
+        $view = views_get_view('document_confirmation');
+        if (!empty($view)) {
+          $view->execute_display($display_id, $view_args);
+        }
+        $criticalCount = count($view->result);
+
+        $display_id = 'attachment_2';
+        $view = views_get_view('document_confirmation');
+        if (!empty($view)) {
+          $view->execute_display($display_id, $view_args);
+        }
+        $requiredCount = count($view->result);
+
+        if ($criticalCount + $requiredCount > 0) {
+          $critical = '<div class="field-content"><div class="icon-critical"></div><a href="/user/document-confirmation/critical">' . $criticalCount . ' Critical Document(s) Outstanding</a></div>';
+          $critical .= '<div class="field-content"><div class="icon-required"></div><a href="/user/document-confirmation/required">' . $requiredCount . ' Required Document(s) Outstanding</a></div>';
+        }
+        else {
+          $critical = '<div class="field-content">You have no outstanding documents at this time.</div>';
+        }
+
+        $block['content']['critical'] = array(
+          '#prefix' => '<div class="documents-critical-required">',
+          '#suffix' => "</div>",
+          '#markup' => $critical,
+          '#type' => 'item',
+        );
+      }
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_mail()
+ * @param $key
+ * @param $message
+ * @param $params
+ */
+function quinn_ob_mail($key, &$message, $params) {
+
+  $data['user'] = $params['account'];
+
+  $options['language'] = $message['language'];
+
+  user_mail_tokens($variables, $data, $options);
+  switch ($key) {
+    case 'mail_system_email':
+      // If the recipient can receive such notices by instant-message, do
+      // not send by email.
+
+      $langcode = $message['language']->language;
+
+      $message['subject'] = variable_get('quinn_ob_email_subject');
+
+      $body = variable_get('quinn_ob_email_body');
+
+
+      $message['body'][] = token_replace($body, $data);
+
+      break;
+
+    case 'module_notify_employee':
+
+      $subject = variable_get('quinn_ob_notify_employee_subject');
+      $message['subject'] = token_replace($subject, $data);
+
+      $body = variable_get('quinn_ob_notify_employee_body');
+      $message['body'][] = token_replace($body, $data);
+
+      break;
+
+    case 'module_notify_supervisor':
+
+      $subject = variable_get('quinn_ob_notify_supervisor_subject');
+      $message['subject'] = token_replace($subject, $data);
+
+      $body = variable_get('quinn_ob_notify_supervisor_body');
+      $message['body'][] = token_replace($body, $data);
+
+      break;
+
+    case 'reminder':
+
+      $subject = variable_get('quinn_ob_reminder_subject');
+      $message['subject'] = token_replace($subject, $data);
+
+      $body = variable_get('quinn_ob_reminder_body');
+      $message['body'][] = token_replace($body, $data);
+
+      break;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter()
+ * @param $form
+ * @param $form_state
+ */
+function quinn_ob_form_user_admin_settings_alter(&$form, &$form_state) {
+  $form['mail_system_email'] = array(
+    '#group' => 'email',
+    '#type' => 'fieldset',
+    '#title' => t('Email after admin create employee'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['mail_system_email']['quinn_ob_email_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#default_value' => t(variable_get('quinn_ob_email_subject', 'New Employee Onboarding Details')),
+    '#group' => 'email'
+  );
+
+  $form['mail_system_email']['quinn_ob_email_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message body'),
+    '#cols' => 40,
+    '#rows' => 10,
+    '#default_value' => t(variable_get('quinn_ob_email_body')),
+    '#description' => t('Enter email body text'),
+    '#group' => 'email'
+  );
+
+  $form['module_notify_employee'] = array(
+    '#group' => 'email',
+    '#type' => 'fieldset',
+    '#title' => t('Notify employee that their supervisor has completed the module'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['module_notify_employee']['quinn_ob_notify_employee_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#default_value' => t(variable_get('quinn_ob_notify_employee_subject',
+      'Your Supervisor has just complete Onboarding Module X')),
+    '#group' => 'email'
+  );
+
+  $form['module_notify_employee']['quinn_ob_notify_employee_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message body'),
+    '#cols' => 40,
+    '#rows' => 10,
+    '#default_value' => t(variable_get('quinn_ob_notify_employee_body')),
+    '#description' => t('Enter email body text'),
+    '#group' => 'email'
+  );
+
+  $form['module_notify_supervisor'] = array(
+    '#group' => 'email',
+    '#type' => 'fieldset',
+    '#title' => t('Notify supervisor that their employee has completed the module'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['module_notify_supervisor']['quinn_ob_notify_supervisor_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#default_value' => t(variable_get('quinn_ob_notify_supervisor_subject',
+      'Employee has just complete Onboarding Module X')),
+    '#group' => 'email'
+  );
+
+  $form['module_notify_supervisor']['quinn_ob_notify_supervisor_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message body'),
+    '#cols' => 40,
+    '#rows' => 10,
+    '#default_value' => t(variable_get('quinn_ob_notify_supervisor_body')),
+    '#description' => t('Enter email body text'),
+    '#group' => 'email'
+  );
+
+
+  $form['reminder'] = array(
+    '#group' => 'email',
+    '#type' => 'fieldset',
+    '#title' => t('Email for all employees in the system with an Onboarding status of incomplete'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['reminder']['quinn_ob_reminder_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#default_value' => t(variable_get('quinn_ob_reminder_subject', 'QBS Onboarding Reminder – ((employee name))')),
+    '#group' => 'email'
+  );
+
+  $form['reminder']['quinn_ob_reminder_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message body'),
+    '#cols' => 40,
+    '#rows' => 10,
+    '#default_value' => t(variable_get('quinn_ob_reminder_body')),
+    '#description' => t('Enter email body text'),
+    '#group' => 'email'
+  );
+
+  $form['send_weekday'] = array(
+    '#type' => 'select',
+    '#weight' => -10,
+    '#title' => t('Day of week to send remiders'),
+    '#default_value' => variable_get('send_weekday', 1),
+    '#options' => array(0 => t('Sunday'), 1 => t('Monday'), 2 => t('Tuesday'), 3 => t('Wednesday'), 4 => t('Thursday'), 5 => t('Friday'), 6 => t('Saturday')),
+  );
+}
+
+/**
+ * Implements hook_form_alter()
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function quinn_ob_form_alter(&$form, &$form_state, $form_id) {
+
+  switch ($form_id) {
+    case 'user_profile_form':
+      //dsm($form, $form_id);
+      break;
+    case 'user_register_form':
+
+      if (arg(0) == 'hr' && arg(1) == 'initiate-onboarding') {
+        $form['#attached']['css'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.css';
+        $w = element_children($form);
+
+        foreach ($w as $el) {
+          $form[$el]['#attributes']['class'][] = 'container-inline';
+        }
+
+        $form['header'] = array(
+          '#markup' => t('Please complete the following items in order to initiate the employee onboarding process.'),
+          '#prefix' => '<div class="form-header-text">',
+          '#suffix' => '</div>',
+          '#weight' => -10,
+        );
+
+        $form['required_text'] = array(
+          '#markup' => '<small><span title="This field is required." class="form-required">*</span> required field</small>',
+          '#weight' => -9,
+        );
+
+        $usr_status = 1;
+        $form['#user']->status = $usr_status;
+        $form['account']['status']['#default_value'] = $usr_status;
+        $form['account']['status']['#value'] = $usr_status;
+        $form['account']['status']['#printed'] = TRUE;
+        $form['account']['roles']['#printed'] = TRUE;
+        $form['account']['notify']['#printed'] = TRUE;
+
+        $lang = $form['field_position']['#language'];
+
+        $voc = (isset($form['field_position'][$lang]['#vocabulary']) ? $form['field_position'][$lang]['#vocabulary'] : 4);
+
+        $options = array();
+
+        if ($terms = taxonomy_get_tree($voc, 146, 1)) {
+          foreach ($terms as $term) {
+            if (!in_array($term->tid, array(47, 48, 49, 50))) {
+              $options[$term->tid] = $term->name;
+            }
+          }
+        }
+
+        $form['account']['name']['#default_value'] = 'username';
+        $form['account']['mail']['#default_value'] = 'username@mail.com';
+        $form['account']['#printed'] = TRUE;
+
+        $form['field_position'][$lang]['#multiple'] = FALSE;
+        $form['field_position'][$lang]['#type'] = 'select';
+        $form['field_position'][$lang]['#options'] = $options;
+        unset($form['field_position'][$lang]['#value']);
+        $form['field_position'][$lang]['#title'] = t('Department');
+        $form['field_position'][$lang]['#element_validate'][0] = 'options_field_widget_validate';
+
+        $lang = $form['field_start_date']['#language'];
+        $form['field_start_date'][$lang][0]['#required'] = TRUE;
+        $form['field_start_date'][$lang][0]['#after_build'][] = 'quinn_ob_date_field_afterbuild_theme';
+
+        $lang = $form['field_district']['#language'];
+        $form['field_district'][$lang]['#required'] = TRUE;
+
+        $lang = $form['field_user_position']['#language'];
+        $form['field_user_position'][$lang]['#required'] = TRUE;
+
+        $lang = $form['field_job_title']['#language'];
+        $form['field_job_title'][$lang]['#title'] = t('Position Title');
+
+
+        $lang = $form['field_company']['#language'];
+        $form['field_company'][$lang]['#required'] = TRUE;
+        unset($form['field_company'][$lang]['#options']['_none']);
+
+        global $user;
+
+        $form['hr_select'] = array(
+          '#value' => $user->mail,
+          '#type' => 'value',
+        );
+
+        $form['#submit'] = array('quinn_ob_send_mail_submit');
+        $form['#validate'] = array();
+        $form['actions']['submit']['#value'] = t('Submit request');
+        $form['metatags']['#printed'] = TRUE;
+        //dsm($form);
+        break;
+      }
+      else {
+
+        $form['#user_created'] = TRUE;
+
+        $lang = $form['field_start_date']['#language'];
+        //$form['field_start_date'][$lang]['#access'] = FALSE;
+
+        $lang = $form['field_district']['#language'];
+        //$form['field_district'][$lang]['#access'] = FALSE;
+
+        $lang = $form['field_company']['#language'];
+        //$form['field_company'][$lang]['#access'] = FALSE;
+
+        $lang = $form['field_user_position']['#language'];
+        //$form['field_user_position'][$lang]['#access'] = FALSE;
+        $form['notify_hr_super'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Notify HR and Supervisor?'),
+        );
+
+        $hrs = array();
+
+        $query = db_select('users', 'u');
+        $query->fields('u', array('mail', 'name'));
+        $query->leftJoin('users_roles', 'r', 'r.uid = u.uid');
+        $query->condition('r.rid', 37);
+        $query->condition('u.status', 1);
+        $result = $query->execute();
+
+        $rows = $result->fetchAllAssoc('mail');
+
+        foreach ($rows as $row) {
+          $hrs[$row->mail] = $row->name;
+        }
+
+        $form['hr_select'] = array(
+          '#type' => 'select',
+          '#title' => t('HR'),
+          '#options' => $hrs,
+        );
+
+        $form['#validate'][] = 'quinn_ob_form_user_create_validate';
+
+      }
+  }
+}
+
+function quinn_ob_form_user_create_validate(&$form, &$form_state) {
+  if ($form_state['values']['notify_hr_super']) {
+    $form['#submit'][] = 'quinn_ob_send_mail_submit';
+  }
+  if ($form['#user_created']) {
+    $form['#submit'][] = 'quinn_ob_user_created_submit';
+  }
+}
+
+function quinn_ob_user_created_submit(&$form, &$form_state) {
+  $user = $form['#user'];
+  drupal_set_message(t('User !usr_name was created', array('!usr_name' => l($user->name, 'user/' . $user->uid))));
+}
+
+/**
+ * Date field afterbuild
+ * @param $element
+ * @return mixed
+ */
+function quinn_ob_date_field_afterbuild_theme($element) {
+  $element['#theme_wrappers'] = array('form_element');
+  $element['value']['#theme_wrappers'] = array();
+  unset($element['value']['date']['#title']);
+  unset($element['value']['date']['#description']);
+  return $element;
+}
+
+/**
+ * Custom Submit for register employees form
+ * @param $form
+ * @param $form_state
+ */
+function quinn_ob_send_mail_submit($form, &$form_state) {
+
+  /*  $account = $form_state['user'];
+    $params['account'] = $account;
+    dsm($form_state);*/
+  $account = $form['#user'];
+
+  entity_form_submit_build_entity('user', $account, $form, $form_state);
+  $params['account'] = $account;
+  $language = user_preferred_language($account);
+  $supervisor = user_load($account->field_supervisor['und'][0]['uid']);
+
+  $role = user_role_load_by_name('QBS Administrator');
+
+
+  $query = db_select('users', 'u');
+  $query->fields('u', array('uid', 'mail'));
+  $query->leftJoin('users_roles', 'r', 'r.uid = u.uid');
+  $query->condition('r.rid', array($role->rid, 1), 'IN');
+  $query->condition('u.status', 1);
+  $result = $query->execute();
+
+  $rows = $result->fetchAllAssoc('uid');
+
+  foreach ($rows as $row) {
+    $recipients[] = $row->mail;
+  }
+
+  $recipients = array();
+
+
+  $recipients[] = $form_state['values']['hr_select'];
+  $recipients[] = $supervisor->mail;
+
+  /** for testing uncomment next line **/
+  //$recipients = array('meilleur@gmail.com', 'dimon4ikzp@gmail.com');
+
+  foreach ($recipients as $recipient) {
+    drupal_mail('quinn_ob', 'mail_system_email', $recipient, $language, $params);
+  }
+
+  drupal_get_messages('status');
+  //dsm($recipients);
+  //dsm($form, 'form');
+  $form_state['redirect'] = 'confirm';
+}
+
+/**
+ * Helper rebuild Submit for ajax forms.
+ * @param $form
+ * @param $form_state
+ */
+function quinn_ob_ajax_form_rebuild_submit($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Callback for hr Pre-Boarding
+ * @return array
+ */
+function quinn_ob_hr_preboarding() {
+  $header = array(
+    array('data' => 'Username', /*'sort' => 'asc',*/
+      'field' => 'u.name'),
+    array('data' => 'First name', 'field' => 'first_name'),
+    array('data' => 'Middle name', 'field' => 'middle_name'),
+    array('data' => 'Last name', 'field' => 'last_name'),
+    array('data' => 'Start date', 'field' => 'start_date'),
+    array('data' => 'Created', 'field' => 'u.created', 'sort' => 'desc', 'class' => array('element-invisible')),
+  );
+
+  //Create the Sql query. This uses various parts of Drupal 7's new DBTNG database abstraction layer.
+  $query = db_select('users', 'u');
+
+  $query->leftJoin('field_data_field_first_name', 'first', 'first.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_middle_name', 'middle', 'middle.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_last_name', 'last', 'last.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_start_date', 'start', 'start.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_preboarding_hr', 'hr', 'hr.entity_id = u.uid');
+
+  $query->addField('u', 'uid');
+  $query->addField('u', 'name');
+  $query->addField('u', 'created');
+  $query->addField('first', 'field_first_name_value', 'first_name');
+  $query->addField('middle', 'field_middle_name_value', 'middle_name');
+  $query->addField('last', 'field_last_name_value', 'last_name');
+  $query->addField('start', 'field_start_date_value', 'start_date');
+  $query->addField('hr', 'field_preboarding_hr_value', 'hr_status');
+
+  $query->condition('field_preboarding_hr_value', 0);
+
+  $query->extend('PagerDefault') //Pager Extender
+      ->limit(10) //10 results per page
+      ->extend('TableSort') //Sorting Extender
+      ->orderByHeader($header);
+  //Field to sort on is picked from $header
+  $results = $query->execute();
+
+  $rows = array();
+  foreach ($results as $data) {
+    $rows[] = array(
+      'data' => array(
+        l($data->name, 'hr/preboarding/employee/' . $data->uid),
+        $data->first_name,
+        $data->middle_name,
+        $data->last_name,
+        format_date(strtotime($data->start_date), 'custom', 'm/d/y'),
+        array('data' => $data->created, 'class' => array('element-invisible')),
+        //$data->created,
+      )
+    );
+  }
+
+
+  $output = array();
+
+  $output['header'] = array(
+    '#markup' => t('The following employees are currently in the Pre-Boarding process.
+    Select an employee name to view their Pre-Boarding Checklist.'),
+    '#prefix' => '<div class="form-header-text">',
+    '#suffix' => '</div>',
+  );
+
+
+  $output['table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#attributes' => array('class' => array('onboarding-process')),
+    '#sticky' => TRUE, //Optional to indicate whether the table headers should be sticky
+    '#empty' => 'No Employee Report', //Optional empty text for the table if resultset is empty
+  );
+
+  $output['pager'] = array(
+    '#theme' => 'pager',
+    '#tags' => array(),
+  );
+
+  $output['#attached']['css'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.css';
+
+  return $output;
+}
+
+/**
+ * Form for HR Pre-Boarding checklist
+ * @param $form
+ * @param $form_state
+ * @param $sid
+ * @return array
+ */
+function quinn_ob_hr_preboarding_checklist($form, $form_state, $sid) {
+
+  $user = user_load($sid);
+
+  $lang = ($user->language) ? $user->language : 'und';
+
+  if ($user->field_preboarding_hr[$lang][0]['value'] !== '0') {
+    drupal_not_found();
+    exit();
+  }
+
+  $form = array();
+  $form['#attached']['css'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.css';
+  $form['#attached']['js'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.js';
+
+  $form['#attached']['drupal_add_http_header'] = array(
+    array('Expires', 'Sat, 26 Jul 1997 05:00:00 GMT'), // Date in the past
+    array('Cache-Control', 'no-cache, no-store, must-revalidate', 'post-check=0, pre-check=0'),
+    array('Pragma', 'no-cache'),
+  );
+
+  $form['#sid'] = $sid;
+  $form['#user'] = $user;
+
+  $form['header'] = array(
+    '#markup' => t('Please complete the following items in order to initiate the employee onboarding process.'),
+    '#prefix' => '<div class="form-header-text">',
+    '#suffix' => '</div>',
+  );
+
+  $name = $user->field_first_name[$lang][0]['value'] . ' ';
+  $name .= $user->field_last_name[$lang][0]['value'];
+
+  $form['new_hire'] = array(
+    '#markup' => t('New Hire: !s', array('!s' => $name)),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $date = format_date(strtotime($user->field_start_date[$lang][0]['value']), 'custom', 'm/d/y');
+
+  $form['start_date'] = array(
+    '#markup' => t('Start Date: !s', array('!s' => $date)),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $form['position'] = array(
+    '#markup' => t('Position: !s', array('!s' => $user->field_user_position[$lang][0]['value'])),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $supervisor = user_load($user->field_supervisor[$lang][0]['uid']);
+
+  $supervisor_name = $supervisor->field_first_name[$lang][0]['value'] . ' '
+      . $supervisor->field_last_name[$lang][0]['value'];
+
+  $form['supervisor'] = array(
+    '#markup' => t('Supervisor: !s', array('!s' => $supervisor_name)),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $sql = db_select('quinn_hr_preboarding', 's');
+  $sql->fields('s');
+  $sql->condition('sid', $sid);
+  $preboarding = $sql->execute()->fetchAssoc();
+  $form['#status_and_date'] = unserialize($preboarding['status_and_date']);
+
+
+  $form['table'] = array(
+    '#attributes' => array('class' => array('onboarding-process')),
+    '#prefix' => '<div id="checklist">',
+    '#suffix' => '</div>',
+    '#theme' => 'table',
+    '#header' => array(t('Checklist Items - 2 weeks prior to start date'), t('Complete'), t('Not Required')), //t('Date Completed'),
+    '#rows' => array(),
+  );
+
+  $list = array(1, 2, 3, 4, 5, 6);
+
+  foreach ($list as $item_num) {
+    if (empty($preboarding)) {
+      $form['#status_and_date']['status_' . $item_num] = 0;
+      $form['#status_and_date']['status_date_' . $item_num] = 0;
+    }
+
+    $status = $form['#status_and_date']['status_' . $item_num];
+    $date = $form['#status_and_date']['status_' . $item_num . '_date'];
+
+    $form['table']['completed_' . $item_num] = array(
+      '#type' => 'checkbox',
+      '#title' => $status == 1 ? format_date($date, 'custom', 'm/d/y') : '',
+      '#display_title' => 'after',
+      '#default_value' => $status == 1 ? 1 : 0,
+      '#checked' => $status == 1 ? 1 : 0,
+      '#prefix' => '<div class="completed-wrapper">',
+      '#suffix' => '</div>',
+
+      '#ajax' => array(
+        'callback' => 'quinn_ob_ajax_checkbox_callback',
+        'method' => 'replace',
+        'effect' => 'fade',
+        'wrapper' => 'checklist',
+        'progress' => array('type' => 'throbber'),
+      ),
+    );
+
+    $form['table']['not_required_' . $item_num] = array(
+      '#type' => 'checkbox',
+      '#title' => t(''),
+      '#default_value' => $status == 2 ? 1 : 0,
+      '#checked' => $status == 2 ? 1 : 0,
+      '#prefix' => '<div class="not-required-wrapper">',
+      '#suffix' => '</div>',
+
+      '#ajax' => array(
+        'callback' => 'quinn_ob_ajax_checkbox_callback',
+        'method' => 'replace',
+        'effect' => 'fade',
+        'wrapper' => 'checklist',
+        'progress' => array('type' => 'throbber'),
+      ),
+    );
+
+    $form['table']['#rows'][$item_num] = array(
+      'data' => array(
+        array('data' => variable_get('ob_hr_preboarding_' . $item_num)),
+        array('data' => &$form['table']['completed_' . $item_num]),
+        array('data' => &$form['table']['not_required_' . $item_num]),
+      ),
+      'class' => array('hr-preboarding-item', 'hr-preboarding-item-' . $item_num),
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Confirm Pre-Boarding Complete'),
+  );
+
+  $form['#action'] = 'hr/preboarding';
+
+  $form['#submit'][] = 'quinn_ob_ajax_form_rebuild_submit';
+  $form['#submit'][] = 'quinn_ob_confirm_hr_submit';
+
+
+  return $form;
+}
+
+/**
+ * HR Pre-Boarding checklist form submit
+ * @param $form
+ * @param $form_state
+ */
+function quinn_ob_confirm_hr_submit($form, &$form_state) {
+  $user = $form['#user'];
+  $language = ($user->language) ? $user->language : 'und';
+
+  $edit = array(
+    'field_preboarding_hr' => array(
+      $language => array(
+        0 => array(
+          'value' => '1', //FOR TESTING should be 1
+        ),
+      ),
+    ),
+  );
+
+
+  drupal_set_message('Pre-Boarding HR was completed.');
+
+  db_delete('quinn_hr_preboarding')->condition('sid', $form['#sid'])->execute();
+
+  user_save($user, $edit);
+  drupal_goto('hr/preboarding');
+}
+
+/**
+ * HR Pre-Boarding checkbox change callback
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function quinn_ob_ajax_checkbox_callback($form, &$form_state) {
+  return quinn_ob_ajax_callback_helper($form, $form_state, 'quinn_hr_preboarding', 'hr-preboarding');
+}
+
+/**
+ * Supervisor Pre-Boarding page
+ * @return array
+ */
+function quinn_ob_supervisor_preboarding() {
+
+  global $user;
+
+  $header = array(
+    array('data' => 'Username', /*'sort' => 'asc',*/
+      'field' => 'u.name'),
+    array('data' => 'First name', 'field' => 'first_name'),
+    array('data' => 'Middle name', 'field' => 'middle_name'),
+    array('data' => 'Last name', 'field' => 'last_name'),
+    array('data' => 'Start date', 'field' => 'start_date'),
+    array('data' => 'Created', 'field' => 'u.created', 'sort' => 'desc', 'class' => array('element-invisible')),
+
+  );
+
+  //Create the Sql query. This uses various parts of Drupal 7's new DBTNG database abstraction layer.
+  $query = db_select('users', 'u');
+
+  $query->leftJoin('field_data_field_first_name', 'first', 'first.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_middle_name', 'middle', 'middle.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_last_name', 'last', 'last.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_start_date', 'start', 'start.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_preboarding_hr', 'hr', 'hr.entity_id = u.uid');
+  $query->leftJoin('field_data_field_supervisor', 'ref', 'ref.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_preboarding_supervisor', 'supervisor', 'supervisor.entity_id = u.uid');
+
+  $query->addField('u', 'uid');
+  $query->addField('u', 'name');
+  $query->addField('u', 'created');
+
+  $query->addField('first', 'field_first_name_value', 'first_name');
+  $query->addField('middle', 'field_middle_name_value', 'middle_name');
+  $query->addField('last', 'field_last_name_value', 'last_name');
+  $query->addField('start', 'field_start_date_value', 'start_date');
+  $query->addField('hr', 'field_preboarding_hr_value', 'hr_status');
+
+  //$query->condition('s.nid', ONBOARDING_NID);
+  $query->condition('field_preboarding_hr_value', 1);
+  $query->condition('field_preboarding_supervisor_value', 0);
+
+  //To show only related to current supevisor
+  $query->condition('ref.field_supervisor_uid', $user->uid);
+
+  //$query->orderBy('created');
+
+  $query->extend('PagerDefault') //Pager Extender
+      ->limit(10) //10 results per page
+      ->extend('TableSort') //Sorting Extender
+      ->orderByHeader($header);
+  //Field to sort on is picked from $header
+
+  $results = $query->execute();
+
+
+  $rows = array();
+  foreach ($results as $data) {
+    $rows[] = array(
+      'data' => array(
+        l($data->name, 'supervisor/preboarding/employee/' . $data->uid),
+        $data->first_name,
+        $data->middle_name,
+        $data->last_name,
+        format_date(strtotime($data->start_date), 'custom', 'm/d/y'),
+        array('data' => $data->created, 'class' => array('element-invisible')),
+      )
+    );
+  }
+
+  $output = array();
+
+  $output['header'] = array(
+    '#markup' => t('The following employees are currently in the Pre-Boarding process.
+    Select an employee name to view their Pre-Boarding Checklist.'),
+    '#prefix' => '<div class="header-form-text">',
+    '#suffix' => '</div>',
+  );
+
+  $output['table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#attributes' => array('class' => array('onboarding-process')),
+    '#sticky' => TRUE, //Optional to indicate whether the table headers should be sticky
+    '#empty' => 'No Employee Report', //Optional empty text for the table if resultset is empty
+  );
+
+  $output['pager'] = array(
+    '#theme' => 'pager',
+    '#tags' => array(),
+  );
+
+  $output['#attached']['css'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.css';
+
+  /*
+  //Append pager
+  $html .= theme('pager',
+    array(
+      'tags' => array()
+    )
+  );
+  return ($html); */
+
+  return $output;
+}
+
+/**
+ * Supervisor Pre-Boarding checklist form
+ * @param $form
+ * @param $form_state
+ * @param $sid
+ * @return array
+ */
+function quinn_ob_supervisor_preboarding_checklist($form, $form_state, $sid) {
+
+  $user = user_load($sid);
+
+  $lang = ($user->language) ? $user->language : 'und';
+
+  if ($user->field_preboarding_supervisor[$lang][0]['value'] !== '0') {
+    drupal_not_found();
+    exit();
+  }
+
+  $form = array();
+  $form['#attached']['css'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.css';
+  $form['#attached']['js'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.js';
+
+  $form['#attached']['drupal_add_http_header'] = array(
+    array('Expires', 'Sat, 26 Jul 1997 05:00:00 GMT'), // Date in the past
+    array('Cache-Control', 'no-cache, no-store, must-revalidate', 'post-check=0, pre-check=0'),
+    array('Pragma', 'no-cache'),
+  );
+
+  $form['#sid'] = $sid;
+  $form['#user'] = $user;
+
+  $form['header'] = array(
+    '#markup' => t('Please complete the following items in order to initiate the employee onboarding process.'),
+    '#prefix' => '<div class="header-form-text">',
+    '#suffix' => '</div>',
+  );
+
+  $name = $user->field_first_name[$lang][0]['value'] . ' ';
+  $name .= $user->field_last_name[$lang][0]['value'];
+
+  $form['new_hire'] = array(
+    '#markup' => t('New Hire: !s', array('!s' => $name)),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $date = format_date(strtotime($user->field_start_date[$lang][0]['value']), 'custom', 'm/d/y');
+
+  $form['start_date'] = array(
+    '#markup' => t('Start Date: !s', array('!s' => $date)),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $form['position'] = array(
+    '#markup' => t('Position: !s', array('!s' => $user->field_user_position[$lang][0]['value'])),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $sql = db_select('quinn_supervisor_preboarding', 's');
+  $sql->fields('s');
+  $sql->condition('sid', $sid);
+  $preboarding = $sql->execute()->fetchAssoc();
+  $form['#status_and_date'] = unserialize($preboarding['status_and_date']);
+
+  $form['table'] = array(
+    '#attributes' => array('class' => array('onboarding-process')),
+    '#prefix' => '<div id="checklist">',
+    '#suffix' => '</div>',
+    '#theme' => 'table',
+    '#sticky' => FALSE,
+    '#header' => array(t('Checklist Items - 2 weeks prior to start date'), t('Complete'), t('Not Required')), //t('Date Completed'),
+    '#rows' => array(),
+  );
+
+  /*
+  $first_col = array(
+    t("1. Complete one form that includes below or individual forms:<br>
+    - IT Request"),
+    '- ' . t('QBS Access FIT012'),
+    '- ' . t('Building Access Request'),
+    '- ' . t('Request for Name Plate'),
+    '- ' . t('Request to add employee to Sign-in board'),
+    '- ' . t('Assigned Company Vehicle or Personal Allowance'),
+    '- ' . t('Request for Credit Card'),
+    '- ' . t('Cell Phone Request'),
+    '- ' . t('Request for Business Cards'),
+    '- ' . t('Request for Class and Pay guidelines'),
+    '- ' . t('Request access to appropriate folders on the Public Drive'),
+    '- ' . t('Request access to appropriate email distribution lists'),
+    t('Pre-Boarding Checklist Items - 1 Week Prior to Start Date'),
+    '1.' . t('Review employees application and experience prior to start date snd compare to the
+    competency checklist and job description'),
+    '2.' . t('Ensure a copy of the description is readily available prior to start date to share with employee'),
+    '3.' . t('Assign a *Buddy and communicate to the Buddy employee`s name, start date and role as a buddy'),
+    '4.' . t('Review and Print off On-Boarding materials to give to employee on Day 1 (Print or Electronic format)'),
+    t('Pre-Boarding Checklist Items - 1 Day Prior to Start Date'),
+    '1.' . t('Ensure that the new employee`s working area, equipment and basic supplies
+    (pen, pencil, highlighter and note pad - can request from Receptionist) are prepared and available.<br>
+    This may include Quinn promotional items'),
+    '2.' . t('Supervisor should make a list/schedule of who the new hire should be introduced to during the first week')
+  );
+  */
+
+  $list = drupal_map_assoc(range(1, 20));
+
+  foreach ($list as $item_num) {
+
+
+    //foreach ($first_col as $key => $row) {
+
+    //$item_num = $key + 1;
+
+    if (empty($preboarding)) {
+      $form['#status_and_date']['status_' . $item_num] = 0;
+      $form['#status_and_date']['status_date_' . $item_num] = 0;
+      //dsm($key);
+    }
+
+    $status = $form['#status_and_date']['status_' . $item_num];
+    $date = $form['#status_and_date']['status_' . $item_num . '_date'];
+
+    $form['table']['completed_' . $item_num] = array(
+      '#type' => 'checkbox',
+      '#title' => $status == 1 ? format_date($date, 'custom', 'm/d/y') : '',
+      '#display_title' => 'after',
+      '#default_value' => $status == 1 ? 1 : 0,
+      '#checked' => $status == 1 ? 1 : 0,
+      '#prefix' => '<div class="completed-wrapper">',
+      '#suffix' => '</div>',
+
+      '#ajax' => array(
+        'callback' => 'quinn_ob_ajax_preboarding_supervisor_callback',
+        'method' => 'replace',
+        'effect' => 'fade',
+        'wrapper' => 'checklist',
+        'progress' => array('type' => 'throbber'),
+      ),
+    );
+
+    $form['table']['not_required_' . $item_num] = array(
+      '#type' => 'checkbox',
+      '#title' => t(''),
+      '#default_value' => $status == 2 ? 1 : 0,
+      '#checked' => $status == 2 ? 1 : 0,
+      '#prefix' => '<div class="not-required-wrapper">',
+      '#suffix' => '</div>',
+
+      '#ajax' => array(
+        'callback' => 'quinn_ob_ajax_preboarding_supervisor_callback',
+        'method' => 'replace',
+        'effect' => 'fade',
+        'wrapper' => 'checklist',
+        'progress' => array('type' => 'throbber'),
+      ),
+    );
+
+    $data = array(
+      'data' => array(
+        //array('data' => $first_col[$key]),fdf
+        array('data' => variable_get('ob_supervisor_preboarding_' . $item_num)),
+        array('data' => &$form['table']['completed_' . $item_num]),
+        array('data' => &$form['table']['not_required_' . $item_num]),
+      ),
+      'class' => array('supervisor-preboarding-item', 'supervisor-preboarding-item-' . $item_num),
+    );
+
+    if ($item_num == 13 || $item_num == 18) {
+      $data['data'][0]['colspan'] = 3;
+      unset($data['data'][1]);
+      unset($data['data'][2]);
+
+      //unset from empty serialized array
+      unset($form['#status_and_date']['status_' . $item_num]);
+      unset($form['#status_and_date']['status_date_' . $item_num]);
+    }
+
+    $form['table']['#rows'][$item_num] = $data;
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Confirm Pre-Boarding Complete'),
+  );
+
+  $form['#submit'][] = 'quinn_ob_ajax_form_rebuild_submit';
+  $form['#submit'][] = 'quinn_ob_confirm_preboarding_supervisor_submit';
+
+  return $form;
+}
+
+/**
+ * Supervisor Pre-Boarding checkbox change callback
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function quinn_ob_ajax_preboarding_supervisor_callback($form, &$form_state) {
+  return quinn_ob_ajax_callback_helper($form, $form_state, 'quinn_supervisor_preboarding', 'supervisor-preboarding');
+}
+
+/**
+ * Supervisor Pre-Boarding Checklist form submit.
+ * @param $form
+ * @param $form_state
+ */
+function quinn_ob_confirm_preboarding_supervisor_submit($form, &$form_state) {
+  module_load_include('inc', 'webform', 'includes/webform.submissions');
+
+  $user = $form['#user'];
+
+  $language = ($user->language) ? $user->language : 'und';
+
+  $edit = array(
+    'field_preboarding_supervisor' => array(
+      $language => array(
+        0 => array(
+          'value' => '1',
+        ),
+      ),
+    ),
+  );
+
+  drupal_set_message('Supervisor Pre-Boarding was completed.');
+
+  db_delete('quinn_supervisor_preboarding')->condition('sid', $form['#sid'])->execute();
+
+  //drupal_goto('supervisor/preboarding');
+  user_save($user, $edit);
+
+}
+
+/**
+ * Supervisor Onboarding Page
+ * @return array
+ */
+function quinn_ob_supervisor_onboarding() {
+  global $user;
+
+  $header = array(
+    array('data' => 'Username', 'field' => 'u.name'),
+    array('data' => 'First name', 'field' => 'first_name'),
+    array('data' => 'Middle name', 'field' => 'middle_name'),
+    array('data' => 'Last name', 'field' => 'last_name'),
+    array('data' => 'Start date', 'field' => 'start_date'),
+    array('data' => 'Current module', 'field' => 'module'),
+    array('data' => 'Created', 'field' => 'u.created', 'sort' => 'desc', 'class' => array('element-invisible')),
+
+  );
+
+  //Create the Sql query. This uses various parts of Drupal 7's new DBTNG database abstraction layer.
+  $query = db_select('users', 'u');
+
+  $query->leftJoin('field_data_field_first_name', 'first', 'first.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_last_name', 'last', 'last.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_middle_name', 'middle', 'middle.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_start_date', 'start', 'start.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_preboarding_hr', 'hr', 'hr.entity_id = u.uid');
+
+  $query->leftJoin('field_data_field_preboarding_supervisor', 'supervisor', 'supervisor.entity_id = u.uid');
+  $query->leftJoin('field_data_field_supervisor', 'ref', 'ref.entity_id = u.uid');
+  $query->leftJoin('field_data_field_module_supervisor', 'module', 'module.entity_id = u.uid');
+
+
+  $query->addField('u', 'uid');
+  $query->addField('u', 'name');
+  $query->addField('u', 'created');
+  $query->addField('first', 'field_first_name_value', 'first_name');
+  $query->addField('middle', 'field_middle_name_value', 'middle_name');
+  $query->addField('last', 'field_last_name_value', 'last_name');
+  $query->addField('start', 'field_start_date_value', 'start_date');
+  $query->addField('hr', 'field_preboarding_hr_value', 'hr_status');
+
+  $query->addField('module', 'field_module_supervisor_value', 'module');
+
+  $query->condition('field_preboarding_hr_value', 1);
+  $query->condition('field_preboarding_supervisor_value', 1);
+
+  //check if onboarding finished or supervisor complete all modules
+  $query->condition('module.field_module_supervisor_value', 6, '<>');
+
+  //To show only related to current supevisor
+  $query->condition('ref.field_supervisor_uid', $user->uid);
+
+  $query->extend('PagerDefault') //Pager Extender
+      ->limit(10) //10 results per page
+      ->extend('TableSort') //Sorting Extender
+      ->orderByHeader($header);
+  //Field to sort on is picked from $header
+
+  $results = $query->execute();
+
+  $rows = array();
+  foreach ($results as $data) {
+
+    $rows[] = array(
+      'data' => array(
+        l($data->name, 'supervisor/onboarding/employee/' . $data->uid),
+        $data->first_name,
+        $data->middle_name,
+        $data->last_name,
+        format_date(strtotime($data->start_date), 'custom', 'm/d/y'),
+        t('Module !module', array('!module' => $data->module)),
+        array('data' => $data->created, 'class' => array('element-invisible')),
+
+      )
+    );
+  }
+
+  $output = array();
+
+  $output['header'] = array(
+    '#markup' => t('The following employees are currently in the Onboarding process.
+    Select an employee name to view their Onboarding Checklist.'),
+    '#prefix' => '<div class="header-form-text">',
+    '#suffix' => '</div>',
+  );
+
+  $output['table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#attributes' => array('class' => array('onboarding-process')),
+    '#sticky' => TRUE, //Optional to indicate whether the table headers should be sticky
+    '#empty' => 'No Employee Report', //Optional empty text for the table if resultset is empty
+  );
+
+  $output['pager'] = array(
+    '#theme' => 'pager',
+    '#tags' => array(),
+  );
+
+  $output['#attached']['css'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.css';
+
+  return $output;
+}
+
+/**
+ * Supervisor Onboarding Checklist form
+ * @param $form
+ * @param $form_state
+ * @param $sid
+ * @return array
+ */
+function quinn_ob_supervisor_onboarding_checklist($form, $form_state, $sid) {
+
+  $user = user_load($sid);
+
+  $lang = ($user->language) ? $user->language : 'und';
+
+  //check if onboarding finished or supervisor complete all modules
+  if ($user->field_onboarding[$lang][0]['value'] !== '0' ||
+      $user->field_module_supervisor[$lang][0]['value'] == 6
+  ) {
+    drupal_not_found();
+    exit();
+  }
+  elseif ($user->field_module_employee[$lang][0]['value'] < $user->field_module_supervisor[$lang][0]['value']) {
+    $form['text']['#markup'] = t('The employee has not yet confirmed the module !m',
+      array('!m' => $user->field_module_employee[$lang][0]['value']));
+    return $form;
+  }
+
+  $form = array();
+  $form['#attached']['css'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.css';
+  $form['#attached']['js'][] = drupal_get_path('module', 'quinn_ob') . '/quinn_ob.js';
+
+  $form['#attached']['drupal_add_http_header'] = array(
+    array('Expires', 'Sat, 26 Jul 1997 05:00:00 GMT'), // Date in the past
+    array('Cache-Control', 'no-cache, no-store, must-revalidate', 'post-check=0, pre-check=0'),
+    array('Pragma', 'no-cache'),
+  );
+
+  $form['#sid'] = $sid;
+  $form['#user'] = $user;
+
+  $sql = db_select('quinn_supervisor_onboarding', 's');
+  $sql->fields('s');
+  $sql->condition('sid', $sid);
+  $preboarding = $sql->execute()->fetchAssoc();
+  $form['#status_and_date'] = unserialize($preboarding['status_and_date']);
+
+  $current_module = empty($user->field_module_supervisor[$lang][0]['value']) ?
+      1 : $user->field_module_supervisor[$lang][0]['value'];
+
+  $form['header'] = array(
+    '#markup' => t('Please complete the following items in order to initiate the employee onboarding process.'),
+    '#prefix' => '<div class="form-header-text">',
+    '#suffix' => '</div>',
+    '#weight' => -10,
+  );
+
+  $name = $user->field_first_name[$lang][0]['value'] . ' ';
+  $name .= $user->field_last_name[$lang][0]['value'];
+
+  $form['new_hire'] = array(
+    '#markup' => t('New Hire: !s', array('!s' => $name)),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $date = format_date(strtotime($user->field_start_date[$lang][0]['value']), 'custom', 'm/d/y');
+
+  $form['start_date'] = array(
+    '#markup' => t('Start Date: !s', array('!s' => $date)),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $form['position'] = array(
+    '#markup' => t('Position: !s', array('!s' => $user->field_user_position[$lang][0]['value'])),
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+  );
+
+  $form['table'] = array(
+    '#attributes' => array('class' => array('onboarding-process')),
+    '#prefix' => '<div id="checklist">',
+    '#suffix' => '</div>',
+    '#theme' => 'table',
+    '#sticky' => FALSE,
+    '#header' => array(t('Module !module Checklist Items',
+      array('!module' => $current_module)), t('Complete'), t('Not Required')), //t('Date Completed'),
+    '#rows' => array(),
+  );
+
+  /*
+  $first_col = array(
+    '1.' . t('Employee attends Orientation and sign-up'),
+    '2.' . t('Introduce New Hire to co-workers and indicate new hire`s position'),
+    '3.' . t('Introduce New Hire to CEO and Senior Leadership Team'),
+    '4.' . t('Introduce New Hire to Buddy'),
+    '5.' . t('Complete Building Orientation
+    <br>- Explain where to find lavatories, coffe area, and perking
+    <br>- Review fire extinguisher locations
+    <br>- Review location of First-Aid supplies
+    <br>- Explain emergency procedures for fire/naturel disaster'),
+    '6.' . t('Show New Hire where to find supplies'),
+    '7.' . t('Review building entry and security code procedure'),
+    '8.' . t('Review log-in procedures for QBS and log-in with New Hire (Check Outlook from QBS)'),
+    '9.' . t('Review log-in procedures for SumTotal and log-in with New Hire (Check Outlook from email)'),
+    '10.' . t('Explain the company`s Attendance Policy'),
+
+  );
+  */
+
+  $list = drupal_map_assoc(range(1, 10));
+
+  foreach ($list as $item_num) {
+
+    if (empty($preboarding)) {
+      $form['#status_and_date']['status_' . $item_num] = 0;
+      $form['#status_and_date']['status_date_' . $item_num] = 0;
+    }
+
+    $status = $form['#status_and_date']['status_' . $item_num];
+    $date = $form['#status_and_date']['status_' . $item_num . '_date'];
+
+    $form['table']['completed_' . $item_num] = array(
+      '#type' => 'checkbox',
+      '#title' => $status == 1 ? format_date($date, 'custom', 'm/d/y') : '',
+      '#display_title' => 'after',
+      '#default_value' => $status == 1 ? 1 : 0,
+      '#checked' => $status == 1 ? 1 : 0,
+      '#prefix' => '<div class="completed-wrapper">',
+      '#suffix' => '</div>',
+
+      '#ajax' => array(
+        'callback' => 'quinn_ob_ajax_onboarding_supervisor_callback',
+        'method' => 'replace',
+        'effect' => 'fade',
+        'wrapper' => 'checklist',
+        'progress' => array('type' => 'throbber'),
+      ),
+    );
+
+    $form['table']['not_required_' . $item_num] = array(
+      '#type' => 'checkbox',
+      '#title' => t(''),
+      '#default_value' => $status == 2 ? 1 : 0,
+      '#checked' => $status == 2 ? 1 : 0,
+      '#prefix' => '<div class="not-required-wrapper">',
+      '#suffix' => '</div>',
+
+      '#ajax' => array(
+        'callback' => 'quinn_ob_ajax_onboarding_supervisor_callback',
+        'method' => 'replace',
+        'effect' => 'fade',
+        'wrapper' => 'checklist',
+        'progress' => array('type' => 'throbber'),
+      ),
+    );
+
+    $data = array(
+      'data' => array(
+        array('data' => variable_get('ob_supervisor_ob_' . $item_num . 'module_' . $current_module)),
+        array('data' => &$form['table']['completed_' . $item_num]),
+        array('data' => &$form['table']['not_required_' . $item_num]),
+      ),
+      'class' => array('supervisor-onboarding-item', 'supervisor-onboarding-item-' . $item_num),
+    );
+
+    $form['table']['#rows'][$item_num] = $data;
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Confirm Onboarding Module Complete'),
+  );
+
+  $form['#submit'][] = 'quinn_ob_ajax_form_rebuild_submit';
+  $form['#submit'][] = 'quinn_ob_confirm_onboarding_supervisor_submit';
+
+  return $form;
+}
+
+/**
+ * Supervisor Onboarding Checklist form submit.
+ * @param $form
+ * @param $form_state
+ */
+function quinn_ob_confirm_onboarding_supervisor_submit($form, &$form_state) {
+  $user = $form['#user'];
+  //dsm($user, 'user');
+  $lang = ($user->language) ? $user->language : 'und';
+
+  if (isset($user->field_module_supervisor[$lang][0]['value'])) {
+    $current_module_supervisor = $user->field_module_supervisor[$lang][0]['value'];
+  }
+  else {
+    $current_module_supervisor = 1;
+  }
+
+  if (isset($user->field_module_employee[$lang][0]['value'])) {
+    $current_module_employee = $user->field_module_employee[$lang][0]['value'];
+  }
+  else {
+    $current_module_employee = 1;
+  }
+
+
+  $edit = array(
+    'field_module_supervisor' => array(
+      $lang => array(
+        0 => array(
+          'value' => $current_module_supervisor + 1,
+        ),
+      ),
+    ),
+  );
+
+  /*
+  $edit = array(
+    'field_module_supervisor' => array(
+      $lang => array(
+        0 => array(
+          'value' => 0,
+        ),
+      ),
+    ),
+    'field_preboarding_hr' => array(
+      $lang => array(
+        0 => array(
+          'value' => '1', //FOR TESTING should be 1
+        ),
+      ),
+    ),
+    'field_preboarding_supervisor' => array(
+      $lang => array(
+        0 => array(
+          'value' => '0', //FOR TESTING should be 1
+        ),
+      ),
+    ),
+  );*/
+
+  if ($current_module_supervisor == 5 && $current_module_employee == 6) {
+    $edit['field_onboarding'][$lang][0]['value'] = 1;
+  }
+
+  drupal_set_message('Onboarding Supervisor was completed.');
+
+  db_delete('quinn_supervisor_onboarding')->condition('sid', $form['#sid'])->execute();
+
+  $params['account'] = $user;
+  $language = user_preferred_language($user);
+
+  drupal_mail('quinn_ob', 'module_notify_employee', $user->mail, $language, $params);
+
+  //dsm($edit, 'edit');
+
+  $new_user = user_save($user, $edit);
+  //drupal_goto('supervisor/preboarding');
+
+  //dsm($new_user, 'new user');
+}
+
+/**
+ * Supervisor Onboarding checkbox change callback
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function quinn_ob_ajax_onboarding_supervisor_callback($form, &$form_state) {
+  return quinn_ob_ajax_callback_helper($form, $form_state, 'quinn_supervisor_onboarding', 'supervisor-onboarding');
+}
+
+/**
+ * Employee Onboarding form
+ * @param $form
+ * @param $form_state
+ * @param $uid
+ * @return array
+ */
+function quinn_ob_employee_onboarding($form, $form_state, $uid) {
+  $user = user_load($uid);
+
+  $lang = ($user->language) ? $user->language : 'und';
+
+  if (isset($user->field_module_supervisor[$lang][0]['value'])) {
+    $current_module_supervisor = $user->field_module_supervisor[$lang][0]['value'];
+  }
+  else {
+    $current_module_supervisor = 1;
+  }
+
+  if (isset($user->field_module_employee[$lang][0]['value'])) {
+    $current_module_employee = $user->field_module_employee[$lang][0]['value'];
+  }
+  else {
+    $current_module_employee = 1;
+  }
+
+  if ($current_module_employee > $current_module_supervisor) {
+    drupal_not_found();
+    exit();
+  }
+
+  $modules = array(
+    1 => t('Company Information'),
+    2 => t('Department Information'),
+    3 => t('Position Information'),
+    4 => t('Development Plan'),
+    5 => t('Completion'),
+  );
+
+  drupal_set_title(t('Module !num: !name',
+      array('!num' => $current_module_employee, '!name' => $modules[$current_module_employee]))
+  );
+
+  $form = array();
+  $form['#user'] = $user;
+
+  $form['header_text'] = array(
+    '#type' => 'item',
+    '#markup' => t('Please click on the title of each item in the following list.
+    For each item, please review the associated document and confirm that you have read it.'),
+  );
+
+  $query = db_select('node', 'n');
+  $query->leftJoin('field_data_field_onboarding_module', 'module', 'module.entity_id = n.nid');
+  $query->addField('n', 'title');
+  $query->addField('n', 'nid');
+  $query->condition('n.type', array('document_html', 'question'));
+  $query->condition('status', 1)
+      ->condition('module.field_onboarding_module_value', $current_module_employee);
+  $nodes = $query->execute()->fetchAll();
+
+  $form['table'] = array(
+    '#attributes' => array('class' => array('onboarding-process')),
+    '#theme' => 'table',
+    '#sticky' => TRUE,
+    '#header' => array(t('Module !module Checklist Items', array('!module' => $current_module_employee)), t('Status')),
+    '#rows' => array(),
+  );
+
+  $flag = flag_get_flag('completed');
+  $show_button = TRUE;
+
+  foreach ($nodes as $key => $node) {
+    if ($flag->is_flagged($node->nid)) {
+      $status = t('Complete');
+    }
+    else {
+      $status = t('Outstanding');
+      $show_button = FALSE;
+    }
+    $form['table']['#rows'][] = array(l(++$key . '. ' . $node->title, 'node/' . $node->nid), $status);
+  }
+
+  if ($show_button) {
+    $form['button'] = array(
+      '#type' => 'submit',
+      '#value' => t('Confirm Onboarding Module Complete'),
+    );
+  }
+  return $form;
+}
+
+/**
+ * Employee Onboarding form submit
+ * @param $form
+ * @param $form_state
+ */
+function quinn_ob_employee_onboarding_submit($form, &$form_state) {
+  $user = $form['#user'];
+
+  $lang = ($user->language) ? $user->language : 'und';
+
+  $current_module_employee =
+      empty($user->field_module_employee[$lang][0]['value']) ? 1 :
+          $user->field_module_employee[$lang][0]['value'];
+
+
+  if (isset($user->field_module_supervisor[$lang][0]['value'])) {
+    $current_module_supervisor = $user->field_module_supervisor[$lang][0]['value'];
+  }
+  else {
+    $current_module_supervisor = 1;
+  }
+
+
+  $edit = array(
+    'field_module_employee' => array(
+      $lang => array(
+        0 => array(
+          'value' => $current_module_employee + 1,
+        ),
+      ),
+    ),
+  );
+
+  if ($current_module_supervisor == 6 && $current_module_employee == 5) {
+    $edit['field_onboarding'][$lang][0]['value'] = 1;
+  }
+
+  drupal_set_message('Onboarding Employee was completed.');
+
+  $supervisor = user_load($user->field_supervisor[$lang][0]['uid']);
+
+  $params['account'] = $user;
+  $language = user_preferred_language($user);
+
+
+  drupal_mail('quinn_ob', 'module_notify_supervisor', $supervisor->mail, $language, $params);
+
+  //drupal_goto('supervisor/preboarding');
+  $new_user = user_save($user, $edit);
+
+  //dsm($new_user, 'new user');
+}
+
+function quinn_ob_ajax_callback_helper($form, $form_state, $table, $tr_class_part) {
+  $commands = array();
+
+  $sql = db_select($table, 's');
+  $sql->addField('s', 'sid');
+  $sql->condition('sid', $form['#sid']);
+  $update = $sql->execute()->rowCount();
+
+  $triggered_element = $form_state['triggering_element'];
+
+  $triggered_name = $form_state['triggering_element']['#name'];
+  $triggered_value = & $form_state['triggering_element']['#value'];
+  $triggered_default_value = $form_state['triggering_element']['#default_value'];
+  $triggered_checked = $form_state['triggering_element']['#checked'];
+
+  $item_num = str_replace('not_required_', '', str_replace('completed_', '', $triggered_name));
+
+  if (strspn($triggered_name, 'completed', NULL, 9)) {
+    if ($triggered_default_value == 1 && $triggered_value == 1) {
+      $rec_status = 0;
+      $form['table']['completed_' . $item_num]['#title'] = '';
+      $form['table']['completed_' . $item_num]['#value'] = 0;
+      $form['table']['completed_' . $item_num]['#checked'] = 0;
+
+    }
+    elseif ($triggered_value == 1) {
+      $rec_status = 1;
+      $form['table']['completed_' . $item_num]['#title'] = format_date(time(), 'custom', 'm/d/y');
+    }
+    else {
+      $rec_status = 0;
+      //empty start date
+      $form['table']['completed_' . $item_num]['#title'] = '';
+    }
+
+    $form['table']['not_required_' . $item_num]['#value'] = 0;
+    $form['table']['not_required_' . $item_num]['#checked'] = 0;
+    $form_state['values']['not_required_' . $item_num] = 0;
+
+  }
+  else {
+    if ($triggered_default_value == 1 && $triggered_value == 1) {
+      $rec_status = 0;
+      $form['table']['not_required_' . $item_num]['#checked'] = 0;
+      $form['table']['not_required_' . $item_num]['#value'] = 0;
+    }
+    elseif ($triggered_value == 1) {
+      $rec_status = 2;
+    }
+    else {
+      $rec_status = 0;
+    }
+    //empty start date
+    $form['table']['completed_' . $item_num]['#title'] = '';
+
+    $form['table']['completed_' . $item_num]['#value'] = 0;
+    $form['table']['completed_' . $item_num]['#checked'] = 0;
+    $form_state['values']['completed_' . $item_num] = 0;
+  }
+
+  $status_and_date = $form['#status_and_date'];
+
+  $date = 'status_' . $item_num . '_date';
+  $status = 'status_' . $item_num;
+
+  $status_and_date[$status] = $rec_status;
+  $status_and_date[$date] = time();
+
+  $record = new stdClass();
+  $record->sid = $form['#sid'];
+  $record->status_and_date = serialize($status_and_date);
+
+  if ($update) {
+    drupal_write_record($table, $record, array('sid'));
+  }
+  else {
+    drupal_write_record($table, $record);
+  }
+
+  $commands[] = ajax_command_replace("tr.$tr_class_part-item-$item_num div.completed-wrapper",
+    drupal_render($form['table']['completed_' . $item_num]));
+
+  $commands[] = ajax_command_replace("tr.$tr_class_part-item-$item_num div.not-required-wrapper",
+    drupal_render($form['table']['not_required_' . $item_num]));
+
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Imlements hook_cron()
+ */
+function quinn_ob_cron() {
+  $send_weekday = variable_get('send_weekday', 1);
+
+  $cron_last = variable_get('cron_last');
+  $min_interval = 60 * 60 * 24; //1 day - if cron executes several times a day
+
+  $remind_supervisor_supervisor = 60 * 60 * 24 * 64;
+
+  //$min_interval = 60 * 60; //for test 1 minute DON`T FORGET DELETE!!!
+  //$send_weekday = date('w'); //for test send every day of week DON`T FORGET DELETE!!!
+
+
+  if (date('w') == $send_weekday && (time() - $cron_last) > $min_interval) {
+
+    //Create the Sql query. This uses various parts of Drupal 7's new DBTNG database abstraction layer.
+    $query = db_select('users', 'u');
+
+    $query->leftJoin('field_data_field_first_name', 'first', 'first.entity_id = u.uid');
+    $query->leftJoin('field_data_field_last_name', 'last', 'last.entity_id = u.uid');
+
+    $query->leftJoin('field_data_field_onboarding', 'ob', 'ob.entity_id = u.uid');
+    $query->leftJoin('field_data_field_module_employee', 'module', 'module.entity_id = u.uid');
+
+    $query->leftJoin('field_data_field_supervisor', 'supervisor', 'module.entity_id = u.uid');
+
+    $query->addField('u', 'uid');
+
+
+    //check if onboarding finished or employee complete all modules
+    $query->condition('ob.field_onboarding_value', 0);
+    $query->condition('module.field_module_employee_value', 6, '<>');
+
+    $result = $query->execute()->fetchAllAssoc('uid');
+
+    foreach ($result as $uid => $item) {
+      $user = user_load($uid);
+      $params['account'] = $user;
+      $language = user_preferred_language($user);
+      $lang = ($user->language) ? $user->language : 'und';
+      $supervisor = user_load($user->field_supervisor[$lang][0]['uid']);
+
+      $send_to = array();
+      $send_to[] = $user->mail;
+      $send_to[] = $supervisor->mail;
+
+      $start_date = strtotime($user->field_start_date[$lang][0]['value']);
+
+      //$remind_supervisor_supervisor = 60 * 5;
+
+      if ((time() - $start_date) > $remind_supervisor_supervisor) {
+        $lang = ($supervisor->language) ? $supervisor->language : 'und';
+        $supervisor_supervisor = user_load($supervisor->field_supervisor[$lang][0]['uid']);
+        $send_to[] = $supervisor_supervisor->mail;
+      }
+
+      drupal_mail('quinn_ob', 'reminder', implode(', ', $send_to), $language, $params, NULL, TRUE);
+    }
+
+  }
+}
